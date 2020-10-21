@@ -3,3 +3,6 @@ Exercises and laboratories of Open Optical Network course at Politecnico di Tori
 
 # Python Lab (Part 1)
 Python basics, Data Structures and Numpy
+
+# Python Lab (Part 2)
+Exercises with Pandas and JSON
