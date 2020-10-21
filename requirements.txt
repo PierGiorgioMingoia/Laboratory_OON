@@ -1,0 +1,17 @@
+certifi==2020.6.20
+cycler==0.10.0
+kiwisolver @ file:///home/conda/feedstock_root/build_artifacts/kiwisolver_1602517217273/work
+matplotlib @ file:///home/conda/feedstock_root/build_artifacts/matplotlib-suite_1602600751051/work
+mkl-fft==1.2.0
+mkl-random==1.1.1
+mkl-service==2.3.0
+numpy @ file:///tmp/build/80754af9/numpy_and_numpy_base_1596233721170/work
+olefile @ file:///home/conda/feedstock_root/build_artifacts/olefile_1602866521163/work
+pandas @ file:///tmp/build/80754af9/pandas_1602088120436/work
+Pillow @ file:///home/conda/feedstock_root/build_artifacts/pillow_1602708613948/work
+pyparsing==2.4.7
+python-dateutil==2.8.1
+pytz==2020.1
+sip==4.19.13
+six==1.15.0
+tornado @ file:///home/conda/feedstock_root/build_artifacts/tornado_1602488891005/work
