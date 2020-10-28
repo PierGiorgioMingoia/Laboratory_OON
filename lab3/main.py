@@ -1,7 +1,6 @@
 import numpy as np
 import json
 import matplotlib.pyplot as plt
-import math
 
 
 class Signal_information:
@@ -35,9 +34,17 @@ class Node:
         if len(signal_information.path) == 1:
             print("END OF PROPAGATION")
         else:
-            next_line = self.successive[signal_information.path[0]]
-            signal_information.update_path()
-            next_line.propagate(signal_information)
+            # find the next line
+            line_key = False
+            for key in self.successive:
+                if key.endswith(signal_information.path[1]):
+                    line_key = key
+            if line_key:
+                next_line = self.successive[line_key]
+                signal_information.update_path()
+                next_line.propagate(signal_information)
+            else:
+                print('Invalid Path')
 
 
 class Line:
@@ -52,15 +59,16 @@ class Line:
         return lat
 
     def noise_generation(self, signal_power):
-        noise = 1 ** (np.exp(1) * signal_power * self.length)
+        print(self.length)
+        noise = 1e-3 * signal_power * self.length
         return noise
 
     def propagate(self, signal_information):
         lat_update = self.latency_generation()
-        noise_update = self.noise_generation()
+        noise_update = self.noise_generation(signal_information.signal_power)
         signal_information.update_noise_power(noise_update)
         signal_information.update_latency(lat_update)
-        self.successive.propagate(signal_information)
+        self.successive[signal_information.path[0]].propagate(signal_information)
 
 
 class Network:
@@ -103,7 +111,7 @@ class Network:
         path.append(u)
 
         if u == d:
-            print(path)
+            # print(path)
             paths.append(path)
         else:
             for k in self.nodes[u].successive:
@@ -113,18 +121,18 @@ class Network:
         visited[u] = False
 
     def propagate(self, signal_information):
-        pass
+        self.nodes[signal_information.path[0]].propagate(signal_information)
 
     def draw(self):
         x = []
         y = []
         for key in self.lines:
-            print(key)
+            # print(key)
             x_values = [self.nodes[key[0]].position[0], self.nodes[key[1]].position[0]]
             y_values = [self.nodes[key[0]].position[1], self.nodes[key[1]].position[1]]
             plt.plot(x_values, y_values, linestyle='--', color='r')
         for key in self.nodes:
-            print(key)
+            # print(key)
             x.append(self.nodes[key].position[0])
             y.append(self.nodes[key].position[1])
         plt.plot(x, y, marker='o', color='b', linestyle='')
@@ -138,5 +146,12 @@ def distance_nodes(x, y):
 if __name__ == '__main__':
     net = Network('./data/nodes.json')
     net.connect()
-    net.find_paths('C', 'B')
-    net.draw()
+    net.find_paths('A', 'B')
+    # net.draw()
+
+    signal = Signal_information(0.001, ['A', 'B', 'D', 'C'])
+    net.propagate(signal)
+    print("Power of the signal: {}".format(signal.signal_power))
+    print("Latency of the signal: {}".format(signal.latency))
+    print("Noise of the signal: {}".format(signal.noise_power))
+    print("Path of the signal: {}".format(signal.path))
