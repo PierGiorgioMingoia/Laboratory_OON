@@ -31,24 +31,36 @@ class Node:
         self.successive = dict()
 
     def propagate(self, signal_information):
-        signal_information.update_path()
-        self.successive.propagate(signal_information)
+        # TODO check if destination
+        if len(signal_information.path) == 1:
+            print("END OF PROPAGATION")
+        else:
+            next_line = self.successive[signal_information.path[0]]
+            signal_information.update_path()
+            next_line.propagate(signal_information)
 
 
 class Line:
     def __init__(self, label, length):
         self.label = label
         self.length = length
-        self.successive = {}
+        self.successive = dict()
 
-    def latency_generation(self, signal_information):
+    def latency_generation(self):
         speed_of_light = 299792458  # m/s
         lat = self.length / speed_of_light
-        signal_information.update_latency(lat)
+        return lat
 
-    def noise_generation(self, signal_information):
-        noise = 1 ** (np.exp(1) * signal_information.signal_power * self.length)
-        signal_information.update_noise_power(noise)
+    def noise_generation(self, signal_power):
+        noise = 1 ** (np.exp(1) * signal_power * self.length)
+        return noise
+
+    def propagate(self, signal_information):
+        lat_update = self.latency_generation()
+        noise_update = self.noise_generation()
+        signal_information.update_noise_power(noise_update)
+        signal_information.update_latency(lat_update)
+        self.successive.propagate(signal_information)
 
 
 class Network:
@@ -58,8 +70,8 @@ class Network:
         with open(json_file) as f:
             network_data = json.load(f)
         for key, value in network_data.items():
-            n = Node({"label": key, **value})
-            self.nodes[key] = n
+            node = Node({"label": key, **value})
+            self.nodes[key] = node
             pos = value['position']
             for n in value['connected_nodes']:
                 label = key + n
@@ -73,19 +85,50 @@ class Network:
             for k in self.lines:
                 if k.startswith(key):
                     self.nodes[key].successive[k] = self.lines[k]
-        print(self.nodes['A'].successive)
         for key in self.lines:
             for k in self.nodes:
                 if key.endswith(k):
                     self.lines[key].successive[k] = self.nodes[k]
-        print(self.lines['DA'].successive['A'].successive)
-
 
     def find_paths(self, node1, node2):
+        visited = {}
+        for key in self.nodes:
+            visited[key] = False
+        paths = []
+        path = []
+        self.count_path_util(node1, node2, visited, path, paths)
+
+    def count_path_util(self, u, d, visited, path, paths):
+        visited[u] = True
+        path.append(u)
+
+        if u == d:
+            print(path)
+            paths.append(path)
+        else:
+            for k in self.nodes[u].successive:
+                if not visited[k[1]]:
+                    self.count_path_util(k[1], d, visited, path, paths)
+        path.pop()
+        visited[u] = False
+
+    def propagate(self, signal_information):
         pass
 
-    def propagate(self):
-        pass
+    def draw(self):
+        x = []
+        y = []
+        for key in self.lines:
+            print(key)
+            x_values = [self.nodes[key[0]].position[0], self.nodes[key[1]].position[0]]
+            y_values = [self.nodes[key[0]].position[1], self.nodes[key[1]].position[1]]
+            plt.plot(x_values, y_values, linestyle='--', color='r')
+        for key in self.nodes:
+            print(key)
+            x.append(self.nodes[key].position[0])
+            y.append(self.nodes[key].position[1])
+        plt.plot(x, y, marker='o', color='b', linestyle='')
+        plt.show()
 
 
 def distance_nodes(x, y):
@@ -95,3 +138,5 @@ def distance_nodes(x, y):
 if __name__ == '__main__':
     net = Network('./data/nodes.json')
     net.connect()
+    net.find_paths('C', 'B')
+    net.draw()
