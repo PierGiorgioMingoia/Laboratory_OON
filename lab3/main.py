@@ -1,6 +1,9 @@
 import numpy as np
 import json
 import matplotlib.pyplot as plt
+import math
+import itertools
+import pandas as pd
 
 
 class Signal_information:
@@ -105,14 +108,14 @@ class Network:
         paths = []
         path = []
         self.count_path_util(node1, node2, visited, path, paths)
+        return paths
 
     def count_path_util(self, u, d, visited, path, paths):
         visited[u] = True
         path.append(u)
 
         if u == d:
-            # print(path)
-            paths.append(path)
+            paths.append(path[:])
         else:
             for k in self.nodes[u].successive:
                 if not visited[k[1]]:
@@ -143,15 +146,63 @@ def distance_nodes(x, y):
     return np.linalg.norm(np.array(x) - np.array(y))
 
 
+def signal_to_noise_ratio(signal_power, noise):
+    # Db = 10log10(w/w)
+    return 10 * math.log10(signal_power / noise)
+
+
+def all_possible_pairs(nodes):
+    return list(itertools.combinations(nodes, 2))
+
+
 if __name__ == '__main__':
     net = Network('./data/nodes.json')
     net.connect()
     net.find_paths('A', 'B')
     # net.draw()
 
-    signal = Signal_information(0.001, ['A', 'B', 'D', 'C'])
+    signal = Signal_information(0.001, ['B', 'A'])
     net.propagate(signal)
     print("Power of the signal: {}".format(signal.signal_power))
     print("Latency of the signal: {}".format(signal.latency))
     print("Noise of the signal: {}".format(signal.noise_power))
     print("Path of the signal: {}".format(signal.path))
+
+    possible_pairs = all_possible_pairs(['A', 'B', 'C', 'D', 'E', 'F'])
+    list_of_paths = []
+    for pair in possible_pairs:
+        pair_paths = net.find_paths(pair[0], pair[1])
+        list_of_paths.append(pair_paths)
+    # print(list_of_paths)
+
+    all_signal_power = []
+    all_signal_latency = []
+    all_signal_noise = []
+    all_signal_ratio = []
+    all_path = []
+    for paths in list_of_paths:
+        for path in paths:
+            print(path)
+            signal = Signal_information(0.001, path)
+            string_path = ''
+            for node in path:
+                string_path += node + '->'
+            string_path = string_path[:-2]
+            all_path.append(string_path)
+            net.propagate(signal)
+            all_signal_power.append(signal.signal_power)
+            all_signal_latency.append(signal.latency)
+            all_signal_noise.append(signal.noise_power)
+            all_signal_ratio.append(signal_to_noise_ratio(signal.signal_power, signal.noise_power))
+
+    print(len(all_path))
+    print(len(all_signal_latency))
+
+    df = pd.DataFrame({
+        "Path": all_path,
+        "Total_latency": all_signal_latency,
+        "Total_noise": all_signal_noise,
+        "Signal_noise_ratio": all_signal_ratio
+    })
+
+    print(df.head(5))
