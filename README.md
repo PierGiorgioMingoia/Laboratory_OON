@@ -6,3 +6,6 @@ Python basics, Data Structures and Numpy
 
 # Python Lab (Part 2)
 Exercises with Pandas and JSON
+
+# Core 
+Contains all project, ending lab 3 we have the network implementation, TODO end lab 4 and try to do python package
