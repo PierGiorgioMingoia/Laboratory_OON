@@ -133,6 +133,14 @@ class Line(object):
     def successive(self, successive):
         self._successive = successive
 
+    @property
+    def state(self):
+        return self._state
+
+    @state.setter
+    def state(self, state):
+        self._state = state
+
     def latency_generation(self):
         latency = self._length / (c * 2 / 3)
         return latency
@@ -152,6 +160,14 @@ class Line(object):
 
         signal_information = self._successive[signal_information.path[0]].propagate(signal_information)
         return signal_information
+
+
+def lines_from_path(path):
+    lines = []
+    for i in range(len(path) - 1):
+        line = path[i] + path[i + 1]
+        lines.append(line)
+    return lines
 
 
 class Network(object):
@@ -300,19 +316,31 @@ class Network(object):
 
     def find_best_snr(self, label1, label2):
         df = self.filter_dataframe_by_path(label1, label2)
-        column = df['Signal_noise_ratio']
-        max_index = column.idxmax()
+        df = df.sort_values(by='Signal_noise_ratio', ascending=False)
+        max_snr = 0
         paths = df['Path']
-        path = paths[max_index]
-        return path.split('->')
+        path = paths.iloc[max_snr].split('->')
+        while not self.path_is_free(path):
+            max_snr += 1
+            if max_snr >= len(paths):
+                # No path available
+                return -1
+            path = paths.iloc[max_snr].split('->')
+        return path
 
     def find_best_latency(self, label1, label2):
         df = self.filter_dataframe_by_path(label1, label2)
-        column = df['Total_latency']
-        max_index = column.idxmin()
+        df = df.sort_values(by='Total_latency', ascending=True)
+        min_lat = 0
         paths = df['Path']
-        path = paths[max_index]
-        return path.split('->')
+        path = paths.iloc[min_lat].split('->')
+        while not self.path_is_free(path):
+            min_lat += 1
+            if min_lat >= len(paths):
+                # No path available
+                return -1
+            path = paths.iloc[min_lat].split('->')
+        return path
 
     def filter_dataframe_by_path(self, label1, label2):
         df = self.weighted_paths.loc[(self.weighted_paths['Path'].apply(lambda x: x.startswith(label1))) & (
@@ -325,10 +353,32 @@ class Network(object):
                 path = self.find_best_latency(connection.input, connection.output)
             else:
                 path = self.find_best_snr(connection.input, connection.output)
-            signal_information = SignalInformation(connection.signal_power, path)
-            self.propagate(signal_information)
-            connection.latency = signal_information.latency
-            connection.snr = signal_to_noise_ratio(signal_information.signal_power, signal_information.noise_power)
+            # set the state of the lines of the path as occupied
+            print(path)
+            if path != -1:
+                lines = lines_from_path(path)
+                for line in lines:
+                    self.set_line_occupied(line)
+
+                signal_information = SignalInformation(connection.signal_power, path)
+                self.propagate(signal_information)
+                connection.latency = signal_information.latency
+                connection.snr = signal_to_noise_ratio(signal_information.signal_power, signal_information.noise_power)
+
+    def set_line_occupied(self, label):
+        self.lines[label].state = 'occupied'
+
+    def set_line_free(self, label):
+        self.lines[label].state = 'free'
+
+    def path_is_free(self, path):
+        lines = lines_from_path(path)
+        free = True
+        for line in lines:
+            if self.lines[line].state == 'occupied':
+                free = False
+                break
+        return free
 
 
 class Connection(object):
@@ -406,7 +456,7 @@ def test_100_connections(network):
             label2 = random.choice(labels)
         con = Connection(label1, label2, 1)
         c_array.append(con)
-    network.stream(c_array, 'snr')
+    network.stream(c_array, 'latency')
     return c_array
 
 
@@ -428,4 +478,4 @@ if __name__ == '__main__':
     weighted_paths_df = pd.read_csv('./data/lab3_dataframe.csv', index_col=0)
     net.weighted_paths = weighted_paths_df
     connections = test_100_connections(net)
-    histogram_of_connections(connections)
+    # histogram_of_connections(connections)
