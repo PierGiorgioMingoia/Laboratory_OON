@@ -61,8 +61,9 @@ def histogram_of_connections(c_array):
     for connection in c_array:
         print('Input: {}, Output: {}, Latency:{}, Snr: {}'.format(connection.input, connection.output,
                                                                   connection.latency, connection.snr))
-        con_snr.append(connection.snr)
-        con_latency.append(connection.latency)
+        if connection.latency is not None:
+            con_snr.append(connection.snr)
+            con_latency.append(connection.latency)
     plot_histogram(con_latency, 'Latency')
     plot_histogram(con_snr, 'Signal to noise ratio')
     return con_latency, con_snr

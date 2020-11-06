@@ -201,6 +201,8 @@ class Network(object):
                 self.propagate(signal_information)
                 connection.latency = signal_information.latency
                 connection.snr = signal_to_noise_ratio(signal_information.signal_power, signal_information.noise_power)
+            else:
+                connection.latency = None;
 
     def set_line_occupied(self, label):
         self.lines[label].state = 'occupied'
