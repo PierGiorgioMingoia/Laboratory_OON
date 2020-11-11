@@ -13,6 +13,14 @@ def lines_from_path(path):
     return lines
 
 
+def arrow_lines_from_path(path):
+    lines = []
+    for i in range(len(path) - 1):
+        line = path[i] + '->' + path[i + 1]
+        lines.append(line)
+    return lines
+
+
 def distance_nodes(x, y):
     return np.linalg.norm(np.array(x) - np.array(y))
 

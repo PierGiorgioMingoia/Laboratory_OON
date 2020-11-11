@@ -30,7 +30,8 @@ class Node(object):
 
     def propagate(self, signal_information):
         if len(signal_information.path) == 1:
-            print("END OF PROPAGATION")
+            # print("END OF PROPAGATION")
+            pass
         else:
             # find the next line
             line_key = False

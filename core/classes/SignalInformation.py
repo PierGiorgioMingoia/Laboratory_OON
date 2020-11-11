@@ -1,5 +1,5 @@
 class SignalInformation(object):
-    def __init__(self, signal_power, path, latency=None, noise_power=None):
+    def __init__(self, signal_power=None, path=None, latency=None, noise_power=None):
         self._signal_power = signal_power
         self._path = path
         if noise_power:
@@ -51,3 +51,18 @@ class SignalInformation(object):
     def update_path(self):
         self._path.pop(0)
         # self._path = self._path[1:]
+
+
+class Lightpath(SignalInformation):
+
+    def __init__(self, channel=None, *args, **kwargs):
+        super(Lightpath, self).__init__(*args, **kwargs)
+        self._channel = channel
+
+    @property
+    def channel(self):
+        return self._channel
+
+    @channel.setter
+    def channel(self, channel):
+        self._channel = channel

@@ -6,7 +6,7 @@ class Line(object):
         self._label = label
         self._length = length
         self._successive = dict()
-        self._state = 'free'
+        self._state = ['free', 'free', 'free', 'free', 'free', 'free', 'free', 'free', 'free', 'free']
 
     @property
     def label(self):
@@ -41,6 +41,9 @@ class Line(object):
         return noise
 
     def propagate(self, signal_information):
+        # Set line's channel as occupied
+        if signal_information.channel is not None:
+            self.set_channel_occupied(signal_information.channel)
         # Update latency
         lat_update = self.latency_generation()
         signal_information.update_latency(lat_update)
@@ -51,3 +54,15 @@ class Line(object):
 
         signal_information = self._successive[signal_information.path[0]].propagate(signal_information)
         return signal_information
+
+    def change_channel_state(self, n):
+        if self.state[n] == 'free':
+            self.state[n] = 'occupied'
+        else:
+            self.state[n] = 'free'
+
+    def set_channel_occupied(self, channel_number):
+        self.state[channel_number] = 'occupied'
+
+    def set_channel_free(self, channel_number):
+        self.state[channel_number] = 'free'

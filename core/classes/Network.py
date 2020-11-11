@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import json
 import pandas as pd
 from .Node import Node
-from .SignalInformation import SignalInformation
+from .SignalInformation import SignalInformation, Lightpath
 from .Line import Line
 
 
@@ -25,6 +25,7 @@ class Network(object):
                 self._lines[label] = line
         self.connect()
         self._weighted_paths = pd.DataFrame({})
+        self._route_space = pd.DataFrame({})
 
     @property
     def nodes(self):
@@ -41,6 +42,15 @@ class Network(object):
     @weighted_paths.setter
     def weighted_paths(self, weighted_paths):
         self._weighted_paths = weighted_paths
+        self.route_space = self.generate_route_space_dataframe()
+
+    @property
+    def route_space(self):
+        return self._route_space
+
+    @route_space.setter
+    def route_space(self, route_space):
+        self._route_space = route_space
 
     def connect(self):
         for key in self._nodes:
@@ -93,8 +103,9 @@ class Network(object):
                     paths.append(path + label2)
         return paths
 
-    def propagate(self, signal_information):
-        propagated_signal_information = self._nodes[signal_information.path[0]].propagate(signal_information)
+    def propagate(self, lightpath):
+
+        propagated_signal_information = self._nodes[lightpath.path[0]].propagate(lightpath)
         return propagated_signal_information
 
     def draw(self):
@@ -151,33 +162,68 @@ class Network(object):
         })
         return df
 
+    def generate_route_space_dataframe(self):
+        feature_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        indexes = range(len(self.weighted_paths))
+        d = pd.DataFrame(1, index=indexes, columns=feature_list)
+        return d
+
+    def light_path_channel_is_free(self, index):
+        free_channel = None
+        for channel in range(10):
+            if self.route_space[channel][index] == 1:
+                free_channel = channel
+                break
+        return free_channel
+
+    def set_path_channel_occupied(self, path, channel):
+        lines_arrows_right = arrow_lines_from_path(path)
+        lines_arrows_left = arrow_lines_from_path(list(reversed(path)))
+        # print(path)
+        for line_arrow_right in lines_arrows_right:
+            df_right = self.weighted_paths[self.weighted_paths['Path'].str.contains(line_arrow_right)]
+            paths_indexes_right = df_right.index
+            for index in paths_indexes_right:
+                self.route_space[channel][index] = 0
+        for line_arrow_left in lines_arrows_left:
+            df_left = self.weighted_paths[self.weighted_paths['Path'].str.contains(line_arrow_left)]
+            paths_indexes_left = df_left.index
+            for index in paths_indexes_left:
+                self.route_space[channel][index] = 0
+
     def find_best_snr(self, label1, label2):
         df = self.filter_dataframe_by_path(label1, label2)
         df = df.sort_values(by='Signal_noise_ratio', ascending=False)
         max_snr = 0
         paths = df['Path']
+        paths_indexes = df['Path'].index
         path = paths.iloc[max_snr].split('->')
-        while not self.path_is_free(path):
+        channel = self.light_path_channel_is_free(paths_indexes[max_snr])
+        while channel is None:
             max_snr += 1
             if max_snr >= len(paths):
                 # No path available
-                return -1
+                return -1, None, None
+            channel = self.light_path_channel_is_free(paths_indexes[max_snr])
             path = paths.iloc[max_snr].split('->')
-        return path
+        return path, channel, paths_indexes[max_snr]
 
     def find_best_latency(self, label1, label2):
         df = self.filter_dataframe_by_path(label1, label2)
         df = df.sort_values(by='Total_latency', ascending=True)
         min_lat = 0
         paths = df['Path']
+        paths_indexes = paths.index
         path = paths.iloc[min_lat].split('->')
-        while not self.path_is_free(path):
+        channel = self.light_path_channel_is_free(paths_indexes[min_lat])
+        while channel is None:
             min_lat += 1
             if min_lat >= len(paths):
                 # No path available
-                return -1
+                return -1, None, None
+            channel = self.light_path_channel_is_free(paths_indexes[min_lat])
             path = paths.iloc[min_lat].split('->')
-        return path
+        return path, channel, paths_indexes[min_lat]
 
     def filter_dataframe_by_path(self, label1, label2):
         df = self.weighted_paths.loc[(self.weighted_paths['Path'].apply(lambda x: x.startswith(label1))) & (
@@ -187,28 +233,20 @@ class Network(object):
     def stream(self, connections, label='latency'):
         for connection in connections:
             if label == 'latency':
-                path = self.find_best_latency(connection.input, connection.output)
+                path, channel, index = self.find_best_latency(connection.input, connection.output)
             else:
-                path = self.find_best_snr(connection.input, connection.output)
+                path, channel, index = self.find_best_snr(connection.input, connection.output)
             # set the state of the lines of the path as occupied
-            print(path)
-            if path != -1:
-                lines = lines_from_path(path)
-                for line in lines:
-                    self.set_line_occupied(line)
-
-                signal_information = SignalInformation(connection.signal_power, path)
-                self.propagate(signal_information)
-                connection.latency = signal_information.latency
-                connection.snr = signal_to_noise_ratio(signal_information.signal_power, signal_information.noise_power)
+            print(path, channel)
+            if path != -1 and channel is not None:
+                # TODO set line channel as occupied in propagate method
+                lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
+                self.set_path_channel_occupied(path, channel)
+                self.propagate(lightpath)
+                connection.latency = lightpath.latency
+                connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
             else:
-                connection.latency = None;
-
-    def set_line_occupied(self, label):
-        self.lines[label].state = 'occupied'
-
-    def set_line_free(self, label):
-        self.lines[label].state = 'free'
+                connection.latency = None
 
     def path_is_free(self, path):
         lines = lines_from_path(path)
