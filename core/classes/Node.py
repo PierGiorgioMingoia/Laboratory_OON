@@ -1,3 +1,6 @@
+import numpy as np
+
+
 class Node(object):
     def __init__(self, node_dict):
         # for key, value in d.items():
@@ -7,6 +10,7 @@ class Node(object):
         self._position = node_dict['position']
         self._connected_nodes = node_dict['connected_nodes']
         self._successive = {}
+        self._switching_matrix = None
 
     @property
     def label(self):
@@ -28,6 +32,14 @@ class Node(object):
     def successive(self, successive):
         self._successive = successive
 
+    @property
+    def switching_matrix(self):
+        return self._switching_matrix
+
+    @switching_matrix.setter
+    def switching_matrix(self, switching_matrix):
+        self._switching_matrix = switching_matrix
+
     def propagate(self, signal_information):
         if len(signal_information.path) == 1:
             # print("END OF PROPAGATION")
@@ -45,3 +57,14 @@ class Node(object):
             else:
                 print('Invalid Path')
         return signal_information
+
+    def create_switching_matrix(self):
+        dic = dict()
+        for node in self.connected_nodes:
+            dic[node] = dict()
+            for n in self.connected_nodes:
+                if n == node:
+                    dic[node][n] = np.zeros(10, dtype=int)
+                else:
+                    dic[node][n] = np.ones(10, dtype=int)
+        return dic

@@ -9,3 +9,6 @@ if __name__ == '__main__':
     # net.draw()
     # histogram_of_connections(connections)
     print(net.route_space)
+    print(net.weighted_paths)
+    net.draw()
+    # print(net.nodes['B'].switching_matrix['A']['A'])

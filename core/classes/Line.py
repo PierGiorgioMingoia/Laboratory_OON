@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.constants import c
 
 
@@ -6,7 +7,7 @@ class Line(object):
         self._label = label
         self._length = length
         self._successive = dict()
-        self._state = ['free', 'free', 'free', 'free', 'free', 'free', 'free', 'free', 'free', 'free']
+        self._state = np.ones(10, dtype=int)
 
     @property
     def label(self):
@@ -56,13 +57,13 @@ class Line(object):
         return signal_information
 
     def change_channel_state(self, n):
-        if self.state[n] == 'free':
-            self.state[n] = 'occupied'
+        if self.state[n] == 1:
+            self.state[n] = 0
         else:
-            self.state[n] = 'free'
+            self.state[n] = 1
 
     def set_channel_occupied(self, channel_number):
-        self.state[channel_number] = 'occupied'
+        self.state[channel_number] = 0
 
     def set_channel_free(self, channel_number):
-        self.state[channel_number] = 'free'
+        self.state[channel_number] = 1

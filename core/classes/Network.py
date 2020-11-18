@@ -54,6 +54,7 @@ class Network(object):
 
     def connect(self):
         for key in self._nodes:
+            self.nodes[key].switching_matrix = self.nodes[key].create_switching_matrix()
             for k in self._lines:
                 if k.startswith(key):
                     self._nodes[key].successive[k] = self._lines[k]
@@ -176,20 +177,24 @@ class Network(object):
                 break
         return free_channel
 
-    def set_path_channel_occupied(self, path, channel):
-        lines_arrows_right = arrow_lines_from_path(path)
-        lines_arrows_left = arrow_lines_from_path(list(reversed(path)))
-        # print(path)
-        for line_arrow_right in lines_arrows_right:
-            df_right = self.weighted_paths[self.weighted_paths['Path'].str.contains(line_arrow_right)]
-            paths_indexes_right = df_right.index
-            for index in paths_indexes_right:
-                self.route_space[channel][index] = 0
-        for line_arrow_left in lines_arrows_left:
-            df_left = self.weighted_paths[self.weighted_paths['Path'].str.contains(line_arrow_left)]
-            paths_indexes_left = df_left.index
-            for index in paths_indexes_left:
-                self.route_space[channel][index] = 0
+    def update_route_space(self):
+        paths = self.weighted_paths['Path']
+        index = 0
+        for path in paths:
+            path = path.split('->')
+            channels = np.ones(10, dtype=int)
+            for i in range(len(path)):
+                if i != 0 and i != len(path) - 1 and i % 2 == 0:
+                    channels *= self.lines[path[i - 1] + path[i]].state
+                    channels *= self.nodes[path[i]].switching_matrix[path[i - 1]][path[i + 1]]
+                elif i % 2 != 0 and i != len(path) - 1:
+                    channels *= self.lines[path[i - 1] + path[i]].state
+                    channels *= self.nodes[path[i]].switching_matrix[path[i - 1]][path[i + 1]]
+                elif i != 0:
+                    channels *= self.lines[path[i - 1] + path[i]].state
+
+            self.route_space.loc[index] = channels
+            index += 1
 
     def find_best_snr(self, label1, label2):
         df = self.filter_dataframe_by_path(label1, label2)
@@ -239,10 +244,9 @@ class Network(object):
             # set the state of the lines of the path as occupied
             print(path, channel)
             if path != -1 and channel is not None:
-                # TODO set line channel as occupied in propagate method
                 lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
-                self.set_path_channel_occupied(path, channel)
                 self.propagate(lightpath)
+                self.update_route_space()
                 connection.latency = lightpath.latency
                 connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
             else:
