@@ -48,7 +48,7 @@ class SignalInformation(object):
     def update_latency(self, increment):
         self._latency += increment
 
-    def update_path(self):
+    def update_path(self, node):
         self._path.pop(0)
         # self._path = self._path[1:]
 
@@ -58,6 +58,7 @@ class Lightpath(SignalInformation):
     def __init__(self, channel=None, *args, **kwargs):
         super(Lightpath, self).__init__(*args, **kwargs)
         self._channel = channel
+        self._last_crossed_node = None
 
     @property
     def channel(self):
@@ -66,3 +67,15 @@ class Lightpath(SignalInformation):
     @channel.setter
     def channel(self, channel):
         self._channel = channel
+
+    @property
+    def last_crossed_node(self):
+        return self._last_crossed_node
+
+    @last_crossed_node.setter
+    def last_crossed_node(self, node):
+        self._last_crossed_node = node
+
+    def update_path(self, node):
+        self.last_crossed_node = node
+        self.path.pop(0)

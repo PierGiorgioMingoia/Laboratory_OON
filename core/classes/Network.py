@@ -4,19 +4,21 @@ import json
 import pandas as pd
 from .Node import Node
 from .SignalInformation import SignalInformation, Lightpath
-from .Line import Line
+from .Line import Line, NUM_OF_CHANNELS
 
 
 class Network(object):
     def __init__(self, json_file):
         self._nodes = dict()
         self._lines = dict()
+        self._nodes_switching_matrix = dict()
         with open(json_file) as f:
             network_data = json.load(f)
         for key, value in network_data.items():
             node = Node({"label": key, **value})
             self._nodes[key] = node
             pos = value['position']
+            self._nodes_switching_matrix[key] = value['switching_matrix']
             for n in value['connected_nodes']:
                 label = key + n
                 next_pos = network_data[n]['position']
@@ -52,9 +54,12 @@ class Network(object):
     def route_space(self, route_space):
         self._route_space = route_space
 
+    @property
+    def nodes_switching_matrix(self):
+        return self._nodes_switching_matrix
+
     def connect(self):
         for key in self._nodes:
-            self.nodes[key].switching_matrix = self.nodes[key].create_switching_matrix()
             for k in self._lines:
                 if k.startswith(key):
                     self._nodes[key].successive[k] = self._lines[k]
@@ -62,6 +67,7 @@ class Network(object):
             for k in self._nodes:
                 if key.endswith(k):
                     self._lines[key].successive[k] = self._nodes[k]
+        self.restore_switching_matrix()
 
     def find_paths(self, node1, node2):
         visited = {}
@@ -171,7 +177,7 @@ class Network(object):
 
     def light_path_channel_is_free(self, index):
         free_channel = None
-        for channel in range(10):
+        for channel in range(NUM_OF_CHANNELS):
             if self.route_space[channel][index] == 1:
                 free_channel = channel
                 break
@@ -251,6 +257,7 @@ class Network(object):
                 connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
             else:
                 connection.latency = None
+        self.restore_switching_matrix()
 
     def path_is_free(self, path):
         lines = lines_from_path(path)
@@ -260,3 +267,10 @@ class Network(object):
                 free = False
                 break
         return free
+
+    def restore_switching_matrix(self):
+        switching_matrix = self.nodes_switching_matrix
+        for key in self.nodes:
+            print(self.nodes[key].switching_matrix)
+            self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
+            print(self.nodes[key].switching_matrix)

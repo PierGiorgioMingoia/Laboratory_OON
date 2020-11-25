@@ -75,3 +75,18 @@ def histogram_of_connections(c_array):
     plot_histogram(con_latency, 'Latency')
     plot_histogram(con_snr, 'Signal to noise ratio')
     return con_latency, con_snr
+
+
+def print_all_lines_state(net):
+    for line in net.lines:
+        print(net.lines[line].state)
+
+
+def test_2_connection(label1, label2,network):
+    c_array = []
+    con1 = Connection(label1, label2, 1)
+    con2 = Connection(label1, label2, 1)
+    c_array.append(con1)
+    c_array.append(con2)
+    network.stream(c_array, 'latency')
+    return c_array

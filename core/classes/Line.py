@@ -1,13 +1,15 @@
 import numpy as np
 from scipy.constants import c
 
+NUM_OF_CHANNELS = 10
+
 
 class Line(object):
     def __init__(self, label, length):
         self._label = label
         self._length = length
         self._successive = dict()
-        self._state = np.ones(10, dtype=int)
+        self._state = np.ones(NUM_OF_CHANNELS, dtype=int)
 
     @property
     def label(self):
