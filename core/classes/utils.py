@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import random
 import itertools
+import pandas as pd
 from .Connection import Connection
 
 
@@ -59,7 +60,7 @@ def test_100_connections(network):
             label2 = random.choice(labels)
         con = Connection(label1, label2, 1)
         c_array.append(con)
-    network.stream(c_array, 'latency')
+    network.stream(c_array, 'snr')
     return c_array
 
 
@@ -82,7 +83,7 @@ def print_all_lines_state(net):
         print(net.lines[line].state)
 
 
-def test_2_connection(label1, label2,network):
+def test_2_connection(label1, label2, network):
     c_array = []
     con1 = Connection(label1, label2, 1)
     con2 = Connection(label1, label2, 1)
@@ -90,3 +91,8 @@ def test_2_connection(label1, label2,network):
     c_array.append(con2)
     network.stream(c_array, 'latency')
     return c_array
+
+
+def print_full_pandas_df(df):
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        print(df)
