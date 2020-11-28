@@ -45,6 +45,8 @@ class Network(object):
     def weighted_paths(self, weighted_paths):
         self._weighted_paths = weighted_paths
         self.route_space = self.generate_route_space_dataframe()
+        # update the full available route space using dynamic switching matrix
+        self.update_route_space()
 
     @property
     def route_space(self):
@@ -69,6 +71,7 @@ class Network(object):
                     self._lines[key].successive[k] = self._nodes[k]
         self.restore_switching_matrix()
 
+    # Recursive algorithm for finding all possible paths
     def find_paths(self, node1, node2):
         visited = {}
         for key in self._nodes:
@@ -91,6 +94,7 @@ class Network(object):
         path.pop()
         visited[u] = False
 
+    # Non recursive algorithm for all possible paths
     def sol_find_path(self, label1, label2):
         cross_nodes = [key for key in self.nodes.keys()
                        if ((key != label1) & (key != label2))]
@@ -111,7 +115,6 @@ class Network(object):
         return paths
 
     def propagate(self, lightpath):
-
         propagated_signal_information = self._nodes[lightpath.path[0]].propagate(lightpath)
         return propagated_signal_information
 
@@ -169,8 +172,9 @@ class Network(object):
         })
         return df
 
+    # Channel availability for paths
     def generate_route_space_dataframe(self):
-        feature_list = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        feature_list = list(range(NUM_OF_CHANNELS))
         indexes = range(len(self.weighted_paths))
         d = pd.DataFrame(1, index=indexes, columns=feature_list)
         return d
@@ -183,12 +187,13 @@ class Network(object):
                 break
         return free_channel
 
+    # Update with multiplication of all lines.channels and switching matrix
     def update_route_space(self):
         paths = self.weighted_paths['Path']
         index = 0
         for path in paths:
             path = path.split('->')
-            channels = np.ones(10, dtype=int)
+            channels = np.ones(NUM_OF_CHANNELS, dtype=int)
             for i in range(len(path)):
                 if i != 0 and i != len(path) - 1 and i % 2 == 0:
                     channels *= self.lines[path[i - 1] + path[i]].state
@@ -229,11 +234,11 @@ class Network(object):
         channel = self.light_path_channel_is_free(paths_indexes[min_lat])
         while channel is None:
             min_lat += 1
+            # No path available
             if min_lat >= len(paths):
-                # No path available
                 return -1, None, None
             channel = self.light_path_channel_is_free(paths_indexes[min_lat])
-            path = paths.iloc[min_lat].split('->')
+            path = paths.iloc[min_lat].split('->')  # maybe can be put outside the while loop
         return path, channel, paths_indexes[min_lat]
 
     def filter_dataframe_by_path(self, label1, label2):
@@ -247,7 +252,6 @@ class Network(object):
                 path, channel, index = self.find_best_latency(connection.input, connection.output)
             else:
                 path, channel, index = self.find_best_snr(connection.input, connection.output)
-            # set the state of the lines of the path as occupied
             print(path, channel)
             if path != -1 and channel is not None:
                 lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
@@ -271,6 +275,4 @@ class Network(object):
     def restore_switching_matrix(self):
         switching_matrix = self.nodes_switching_matrix
         for key in self.nodes:
-            print(self.nodes[key].switching_matrix)
             self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
-            print(self.nodes[key].switching_matrix)
