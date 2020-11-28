@@ -1,12 +1,9 @@
 import numpy as np
-from .Line import Line, NUM_OF_CHANNELS
+from .Line import NUM_OF_CHANNELS
 
 
 class Node(object):
     def __init__(self, node_dict):
-        # for key, value in d.items():
-        #    setattr(self, key, value)
-        # self._successive = dict()
         self._label = node_dict['label']
         self._position = node_dict['position']
         self._connected_nodes = node_dict['connected_nodes']
@@ -54,9 +51,8 @@ class Node(object):
             if line_key:
                 next_line = self._successive[line_key]
                 if signal_information.last_crossed_node is not None:
-                    self.dynamic_mod_switching_matrix(signal_information.channel
-                                                      , signal_information.last_crossed_node
-                                                      , signal_information.path[1])
+                    self.dynamic_mod_switching_matrix(signal_information.channel, signal_information.last_crossed_node,
+                                                      signal_information.path[1])
                 signal_information.update_path(self.label)
                 signal_information = next_line.propagate(signal_information)
             else:
