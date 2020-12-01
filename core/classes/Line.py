@@ -17,7 +17,7 @@ class Line(object):
 
     @property
     def length(self):
-        return self._label
+        return self._length
 
     @property
     def successive(self):
