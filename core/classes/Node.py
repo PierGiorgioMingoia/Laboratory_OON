@@ -7,6 +7,10 @@ class Node(object):
         self._label = node_dict['label']
         self._position = node_dict['position']
         self._connected_nodes = node_dict['connected_nodes']
+        if 'transceiver' in node_dict:
+            self._transceiver = node_dict['transceiver']
+        else:
+            self._transceiver = 'fixed-rate'
         self._successive = {}
         self._switching_matrix = None
 
@@ -38,6 +42,14 @@ class Node(object):
     def switching_matrix(self, switching_matrix):
         self._switching_matrix = switching_matrix
 
+    @property
+    def transceiver(self):
+        return self._transceiver
+
+    @transceiver.setter
+    def transceiver(self, transceiver):
+        self._transceiver = transceiver
+
     def propagate(self, signal_information):
         if len(signal_information.path) == 1:
             # print("END OF PROPAGATION")
@@ -50,7 +62,8 @@ class Node(object):
                     line_key = key
             if line_key:
                 next_line = self._successive[line_key]
-                if signal_information.last_crossed_node is not None:
+                if hasattr(signal_information,
+                           'last_crossed_node') and signal_information.last_crossed_node is not None:
                     self.dynamic_mod_switching_matrix(signal_information.channel, signal_information.last_crossed_node,
                                                       signal_information.path[1])
                 signal_information.update_path(self.label)
