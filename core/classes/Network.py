@@ -253,12 +253,18 @@ class Network(object):
             else:
                 path, channel, index = self.find_best_snr(connection.input, connection.output)
             print(path, channel)
+
             if path != -1 and channel is not None:
-                lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
-                self.propagate(lightpath)
-                self.update_route_space()
-                connection.latency = lightpath.latency
-                connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
+                bit_rate = self.calculate_bit_rate(path, self._nodes[path[0]].transceiver)
+                if bit_rate != 0:
+                    lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
+                    self.propagate(lightpath)
+                    self.update_route_space()
+                    connection.latency = lightpath.latency
+                    connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
+                    connection.bit_rate = bit_rate
+                else:
+                    connection.latency = None
             else:
                 connection.latency = None
         self.restore_switching_matrix()
@@ -276,3 +282,34 @@ class Network(object):
         switching_matrix = self.nodes_switching_matrix
         for key in self.nodes:
             self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
+
+    def calculate_bit_rate(self, path, strategy):
+        gsnr = self.weighted_paths.loc[self.weighted_paths['Path'] == '->'.join(path)]['Signal_noise_ratio'].values[0]
+        bit_rate = 0
+        bit_error_ratio = 2.5
+        symbol_rate = 32e9
+        noise_bandwidth = 12.5e9
+        if strategy == 'flex_rate':
+            if gsnr < 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+                bit_rate = 0
+            elif 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth <= gsnr < 14 / 3 * (
+                    3 / 2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+                bit_rate = 100e9
+
+            elif 14 / 3 * (3 / 2 * bit_error_ratio) * symbol_rate / noise_bandwidth <= gsnr < 10 * (
+                    8 / 3 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+                bit_rate = 200e9
+            #
+            elif gsnr >= 10 * (8 / 3 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+                bit_rate = 400e9
+
+        elif strategy == 'shannon':
+            bit_rate = 2 * symbol_rate * np.log2(1 + gsnr * noise_bandwidth / symbol_rate)
+        # fix-rate default
+        else:
+            if gsnr > 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+                bit_rate = 100e9
+            else:
+                bit_rate = 0
+
+        return bit_rate

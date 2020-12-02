@@ -78,6 +78,23 @@ def histogram_of_connections(c_array):
     return con_latency, con_snr
 
 
+def lab8_histograms(c_array):
+    con_snr = []
+    con_bit_rate = []
+    for connection in c_array:
+        con_snr.append(connection.snr)
+        con_bit_rate.append(connection.bit_rate)
+    plot_histogram(con_snr, 'SNR distribution')
+    plot_histogram(con_bit_rate, 'Bit rate distribution')
+    return con_snr, con_bit_rate
+
+
+def print_bit_rate_and_snr_average_and_total_c(snrs, bit_rates):
+    print('Average SNR: {}, Average bit rate: {}, Total capacity: {}'.format(np.average(snrs), np.average(bit_rates),
+                                                                             np.sum(bit_rates)))
+    return np.average(snrs), np.average(bit_rates), np.sum(bit_rates)
+
+
 def print_all_lines_state(net):
     for line in net.lines:
         print(net.lines[line].state)
