@@ -54,11 +54,12 @@ class SignalInformation(object):
 
 
 class Lightpath(SignalInformation):
-
-    def __init__(self, channel=None, *args, **kwargs):
+    def __init__(self, channel=None, Rs=32e9, df=50e9, *args, **kwargs):
         super(Lightpath, self).__init__(*args, **kwargs)
         self._channel = channel
         self._last_crossed_node = None
+        self._Rs = Rs
+        self._df = df
 
     @property
     def channel(self):
@@ -75,6 +76,24 @@ class Lightpath(SignalInformation):
     @last_crossed_node.setter
     def last_crossed_node(self, node):
         self._last_crossed_node = node
+
+    @property
+    def Rs(self):
+        """Signal symbol rate Hz"""
+        return self._Rs
+
+    @Rs.setter
+    def Rs(self, Rs):
+        self._Rs = Rs
+
+    @property
+    def df(self):
+        """Frequency spacing between two consecutive channels"""
+        return self._df
+
+    @df.setter
+    def df(self, df):
+        self._df = df
 
     def update_path(self, node):
         self.last_crossed_node = node

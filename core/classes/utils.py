@@ -31,6 +31,14 @@ def signal_to_noise_ratio(signal_power, noise):
     return 10 * np.log10(signal_power / noise)
 
 
+def db_to_linear(value):
+    return 10 ** (value / 10)
+
+
+def linear_to_db(value):
+    return 10 * np.log10(value)
+
+
 def all_possible_pairs(nodes):
     return list(itertools.combinations(nodes, 2))
 
