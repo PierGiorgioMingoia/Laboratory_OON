@@ -2,9 +2,12 @@ from .utils import *
 import matplotlib.pyplot as plt
 import json
 import pandas as pd
+from scipy.special import erfinv as ierfc
 from .Node import Node
 from .SignalInformation import SignalInformation, Lightpath
 from .Line import Line, NUM_OF_CHANNELS
+
+NOISE_BANDWIDTH = 12.5e9
 
 
 class Network(object):
@@ -286,28 +289,28 @@ class Network(object):
     def calculate_bit_rate(self, path, strategy):
         gsnr = self.weighted_paths.loc[self.weighted_paths['Path'] == '->'.join(path)]['Signal_noise_ratio'].values[0]
         bit_rate = 0
-        bit_error_ratio = 2.5
+        bit_error_ratio = 1e-3
         symbol_rate = 32e9
-        noise_bandwidth = 12.5e9
+
         if strategy == 'flex_rate':
-            if gsnr < 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+            if gsnr < 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 0
-            elif 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth <= gsnr < 14 / 3 * (
-                    3 / 2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+            elif 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH <= gsnr < 14 / 3 * (
+                    (ierfc(3 / 2 * bit_error_ratio) ** 2)) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 100e9
 
-            elif 14 / 3 * (3 / 2 * bit_error_ratio) * symbol_rate / noise_bandwidth <= gsnr < 10 * (
-                    8 / 3 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+            elif 14 / 3 * (ierfc(3 / 2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH <= gsnr < 10 * (
+                    (ierfc(8 / 3 * bit_error_ratio) ** 2)) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 200e9
             #
-            elif gsnr >= 10 * (8 / 3 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+            elif gsnr >= 10 * (ierfc(8 / 3 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 400e9
 
         elif strategy == 'shannon':
-            bit_rate = 2 * symbol_rate * np.log2(1 + gsnr * noise_bandwidth / symbol_rate)
+            bit_rate = 2 * symbol_rate * np.log2(1 + gsnr * NOISE_BANDWIDTH / symbol_rate)
         # fix-rate default
         else:
-            if gsnr > 2 * (2 * bit_error_ratio) * symbol_rate / noise_bandwidth:
+            if gsnr > 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 100e9
             else:
                 bit_rate = 0
