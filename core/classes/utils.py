@@ -66,7 +66,7 @@ def test_100_connections(network):
         label2 = random.choice(labels)
         while label1 == label2:
             label2 = random.choice(labels)
-        con = Connection(label1, label2, 1)
+        con = Connection(label1, label2, 0.001)
         c_array.append(con)
     network.stream(c_array, 'snr')
     return c_array

@@ -257,9 +257,9 @@ class Network(object):
             print(path, channel)
 
             if path != -1 and channel is not None:
-                bit_rate = self.calculate_bit_rate(path, self._nodes[path[0]].transceiver)
+                lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
+                bit_rate = self.calculate_bit_rate(lightpath, self._nodes[path[0]].transceiver)
                 if bit_rate != 0:
-                    lightpath = Lightpath(signal_power=connection.signal_power, path=path, channel=channel)
                     self.propagate(lightpath)
                     self.update_route_space()
                     connection.latency = lightpath.latency
@@ -285,11 +285,12 @@ class Network(object):
         for key in self.nodes:
             self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
 
-    def calculate_bit_rate(self, path, strategy):
-        gsnr = self.weighted_paths.loc[self.weighted_paths['Path'] == '->'.join(path)]['Signal_noise_ratio'].values[0]
+    def calculate_bit_rate(self, lightpath, strategy):
+        gsnr = self.weighted_paths.loc[
+            self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
         bit_rate = 0
         bit_error_ratio = 1e-3
-        symbol_rate = 32e9
+        symbol_rate = lightpath.Rs
 
         if strategy == 'flex_rate':
             if gsnr < 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:

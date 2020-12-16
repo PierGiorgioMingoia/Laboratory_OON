@@ -107,8 +107,9 @@ class Line(object):
         latency = self.length / (c * 2 / 3)
         return latency
 
-    def noise_generation(self, signal_power):
-        noise = 1e-9 * signal_power * self._length
+    def noise_generation(self, light_path):
+        # noise = 1e-9 * light_path.signal_power * self._length
+        noise = self.ase_generation() + self.nli_generation(light_path)
         return noise
 
     def propagate(self, signal_information):
@@ -120,7 +121,7 @@ class Line(object):
         signal_information.update_latency(lat_update)
 
         # Update noise
-        noise_update = self.noise_generation(signal_information.signal_power)
+        noise_update = self.noise_generation(signal_information)
         signal_information.update_noise_power(noise_update)
 
         signal_information = self._successive[signal_information.path[0]].propagate(signal_information)
@@ -155,7 +156,8 @@ class Line(object):
             * (len(self.state) ** (2 * (light_path.Rs / light_path.df)))
         ) * (self.alfa / self.beta2) * ((self.gamma ** 2) * (l_eff ** 2) / (light_path.Rs ** 3))
 
-        # print(self.alfa, self.beta2, len(self.state), self.gamma, l_eff, light_path.Rs, light_path.df, eta_nli)
-
         nli = (light_path.signal_power ** 3) * eta_nli * self.n_span * NOISE_BANDWIDTH
         return nli
+
+    def optimized_launch_power(self):
+        pass
