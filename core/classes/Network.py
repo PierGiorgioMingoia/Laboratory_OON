@@ -6,8 +6,7 @@ from scipy.special import erfinv as ierfc
 from .Node import Node
 from .SignalInformation import SignalInformation, Lightpath
 from .Line import Line, NUM_OF_CHANNELS
-
-NOISE_BANDWIDTH = 12.5e9
+from .GlobalVariable import NOISE_BANDWIDTH
 
 
 class Network(object):
