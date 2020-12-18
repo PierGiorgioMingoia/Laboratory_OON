@@ -121,3 +121,15 @@ def test_2_connection(label1, label2, network):
 def print_full_pandas_df(df):
     with pd.option_context('display.max_rows', None, 'display.max_columns', None):
         print(df)
+
+
+def create_traffic_matrix(network):
+    traffic_matrix = {}
+    for label in network.nodes:
+        traffic_matrix[label] = {}
+        for inner_label in network.nodes:
+            bit_rate_request = 100e15
+            if label == inner_label:
+                bit_rate_request = 0
+            traffic_matrix[label][inner_label] = bit_rate_request
+    return traffic_matrix

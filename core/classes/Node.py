@@ -66,6 +66,8 @@ class Node(object):
                            'last_crossed_node') and signal_information.last_crossed_node is not None:
                     self.dynamic_mod_switching_matrix(signal_information.channel, signal_information.last_crossed_node,
                                                       signal_information.path[1])
+                optimal_launch_power = next_line.optimized_launch_power(signal_information)
+                signal_information.signal_power = optimal_launch_power
                 signal_information.update_path(self.label)
                 signal_information = next_line.propagate(signal_information)
             else:

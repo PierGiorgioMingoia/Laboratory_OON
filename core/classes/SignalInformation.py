@@ -15,6 +15,10 @@ class SignalInformation(object):
     def signal_power(self):
         return self._signal_power
 
+    @signal_power.setter
+    def signal_power(self, signal_power):
+        self._signal_power = signal_power
+
     @property
     def noise_power(self):
         return self._noise_power

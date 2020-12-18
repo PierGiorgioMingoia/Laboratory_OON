@@ -2,6 +2,8 @@ from .utils import *
 import matplotlib.pyplot as plt
 import json
 import pandas as pd
+import copy
+import random
 from scipy.special import erfinv as ierfc
 from .Node import Node
 from .SignalInformation import SignalInformation, Lightpath
@@ -286,8 +288,12 @@ class Network(object):
             self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
 
     def calculate_bit_rate(self, lightpath, strategy):
-        gsnr = self.weighted_paths.loc[
-            self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
+        # gsnr = self.weighted_paths.loc[
+        #    self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
+        test_lightpath = copy.deepcopy(lightpath)
+        self.propagate(test_lightpath)
+        gsnr = signal_to_noise_ratio(test_lightpath.signal_power, test_lightpath.noise_power)
+        del test_lightpath
         bit_rate = 0
         bit_error_ratio = 1e-3
         symbol_rate = lightpath.Rs
@@ -316,3 +322,36 @@ class Network(object):
                 bit_rate = 0
 
         return bit_rate
+
+    def create_traffic_matrix(self, M=1):
+        traffic_matrix = {}
+        for label in self.nodes:
+            traffic_matrix[label] = {}
+            for inner_label in self.nodes:
+                bit_rate_request = 100e9 * M
+                if label == inner_label:
+                    bit_rate_request = 0
+                traffic_matrix[label][inner_label] = bit_rate_request
+        return traffic_matrix
+
+    def creates_handle_connection_from_traffic_matrix(self, traffic_matrix):
+        traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
+        for keys in list(traffic_matrix):
+            for inner_keys in list(traffic_matrix[keys]):
+                if traffic_matrix[keys][inner_keys] == 0:
+                    del traffic_matrix_tmp[keys][inner_keys]
+            if bool(traffic_matrix_tmp[keys]) is False:
+                del traffic_matrix_tmp[keys]
+
+        if bool(traffic_matrix_tmp):
+            input_node = random.choice(list(traffic_matrix_tmp.keys()))
+            output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))
+            connection = Connection(input_node, output_node, 0.001)
+            connections = [connection]
+            self.stream(connections, 'snr')
+            traffic_matrix[input_node][output_node] -= connection.bit_rate
+            return connection
+        else:
+            return Connection('A', 'B', 0.001)
+
+    pass
