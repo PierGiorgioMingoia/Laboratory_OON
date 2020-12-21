@@ -349,9 +349,36 @@ class Network(object):
             connection = Connection(input_node, output_node, 0.001)
             connections = [connection]
             self.stream(connections, 'snr')
+            if connection.latency is None:
+                print('Network is saturated')
             traffic_matrix[input_node][output_node] -= connection.bit_rate
             return connection
         else:
-            return Connection('A', 'B', 0.001)
+            print('No more traffic')
+            return Connection('None', 'None', 0.001)
 
-    pass
+    def satisfy_traffic_matrix(self, traffic_matrix):
+        traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
+        traffic_connections = []
+        while bool(traffic_matrix_tmp):
+            traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
+            for keys in list(traffic_matrix):
+                for inner_keys in list(traffic_matrix[keys]):
+                    if traffic_matrix[keys][inner_keys] == 0:
+                        del traffic_matrix_tmp[keys][inner_keys]
+                if bool(traffic_matrix_tmp[keys]) is False:
+                    del traffic_matrix_tmp[keys]
+            if bool(traffic_matrix_tmp):
+                input_node = random.choice(list(traffic_matrix_tmp.keys()))
+                output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))
+                connection = Connection(input_node, output_node, 0.001)
+                connections = [connection]
+                self.stream(connections, 'snr')
+                if connection.latency is None:
+                    print('Network is saturated')
+                    break
+                traffic_matrix[input_node][output_node] -= connection.bit_rate
+                traffic_connections.append(connection)
+            else:
+                print('No more traffic')
+        return traffic_connections
