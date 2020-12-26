@@ -22,5 +22,5 @@ if __name__ == '__main__':
     # net.draw()
     # connection = test_2_connection('A', 'F', net)
 
-    traffic_matrix = net.create_traffic_matrix(M=5)
-    print(len(net.satisfy_traffic_matrix(traffic_matrix)))
+    traffic_matrix = net.create_traffic_matrix(M=20)
+    print(net.satisfy_traffic_matrix(traffic_matrix))

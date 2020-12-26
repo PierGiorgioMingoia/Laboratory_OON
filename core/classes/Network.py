@@ -298,6 +298,8 @@ class Network(object):
         bit_error_ratio = 1e-3
         symbol_rate = lightpath.Rs
 
+        # TODO now why my bit_rate in flex rate is always = 400
+
         if strategy == 'flex_rate':
             if gsnr < 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 0
@@ -357,14 +359,16 @@ class Network(object):
             print('No more traffic')
             return Connection('None', 'None', 0.001)
 
-    def satisfy_traffic_matrix(self, traffic_matrix):
+    def satisfy_traffic_matrix(self, traffic_matrix, rwa_method='snr'):
         traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
         traffic_connections = []
+        refused_requests = 0
+        satisfied_requests = 0
         while bool(traffic_matrix_tmp):
             traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
             for keys in list(traffic_matrix):
                 for inner_keys in list(traffic_matrix[keys]):
-                    if traffic_matrix[keys][inner_keys] == 0:
+                    if traffic_matrix[keys][inner_keys] <= 0:
                         del traffic_matrix_tmp[keys][inner_keys]
                 if bool(traffic_matrix_tmp[keys]) is False:
                     del traffic_matrix_tmp[keys]
@@ -373,12 +377,17 @@ class Network(object):
                 output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))
                 connection = Connection(input_node, output_node, 0.001)
                 connections = [connection]
-                self.stream(connections, 'snr')
+                self.stream(connections, rwa_method)
                 if connection.latency is None:
                     print('Network is saturated')
-                    break
-                traffic_matrix[input_node][output_node] -= connection.bit_rate
+                    refused_requests += 1
+                    traffic_matrix[input_node][output_node] = 0
+
+                else:
+                    traffic_matrix[input_node][output_node] -= connection.bit_rate
+                    if traffic_matrix[input_node][output_node] <= 0:
+                        satisfied_requests += 1
                 traffic_connections.append(connection)
             else:
                 print('No more traffic')
-        return traffic_connections
+        return traffic_connections, refused_requests, satisfied_requests
