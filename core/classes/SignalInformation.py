@@ -64,6 +64,7 @@ class Lightpath(SignalInformation):
         self._last_crossed_node = None
         self._Rs = Rs
         self._df = df
+        self._isnr = 0
 
     @property
     def channel(self):
@@ -98,6 +99,17 @@ class Lightpath(SignalInformation):
     @df.setter
     def df(self, df):
         self._df = df
+
+    @property
+    def isnr(self):
+        return self._isnr
+
+    @isnr.setter
+    def isnr(self, isnr):
+        self._isnr = isnr
+
+    def update_isnr(self, increment):
+        self.isnr += increment
 
     def update_path(self, node):
         self.last_crossed_node = node

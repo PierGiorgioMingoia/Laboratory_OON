@@ -119,7 +119,7 @@ class Network(object):
         return paths
 
     def propagate(self, lightpath):
-        propagated_signal_information = self._nodes[lightpath.path[0]].propagate(lightpath)
+        propagated_signal_information = self.nodes[lightpath.path[0]].propagate(lightpath)
         return propagated_signal_information
 
     def draw(self):
@@ -151,12 +151,13 @@ class Network(object):
         all_signal_latency = []
         all_signal_noise = []
         all_signal_ratio = []
+        all_gsnr = []
         all_path = []
 
         for paths in list_of_paths:
             for path in paths:
                 # print(path)
-                signal = SignalInformation(signal_power, path)
+                signal = lightpath = Lightpath(signal_power=signal_power, path=path)
                 string_path = ''
                 for node in path:
                     string_path += node + '->'
@@ -167,12 +168,13 @@ class Network(object):
                 all_signal_latency.append(signal.latency)
                 all_signal_noise.append(signal.noise_power)
                 all_signal_ratio.append(signal_to_noise_ratio(signal.signal_power, signal.noise_power))
+                all_gsnr.append(linear_to_db(1 / signal.isnr))
 
         df = pd.DataFrame({
             "Path": all_path,
             "Total_latency": all_signal_latency,
             "Total_noise": all_signal_noise,
-            "Signal_noise_ratio": all_signal_ratio
+            "Signal_noise_ratio": all_gsnr,
         })
         return df
 
@@ -266,6 +268,7 @@ class Network(object):
                     self.update_route_space()
                     connection.latency = lightpath.latency
                     connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
+                    connection.gsnr = linear_to_db(1 / lightpath.isnr)
                     connection.bit_rate = bit_rate
                 else:
                     connection.latency = None
@@ -288,12 +291,12 @@ class Network(object):
             self.nodes[key].switching_matrix = Node.create_switching_matrix(switching_matrix[key])
 
     def calculate_bit_rate(self, lightpath, strategy):
-        # gsnr = self.weighted_paths.loc[
-        #    self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
-        test_lightpath = copy.deepcopy(lightpath)
-        self.propagate(test_lightpath)
-        gsnr = signal_to_noise_ratio(test_lightpath.signal_power, test_lightpath.noise_power)
-        del test_lightpath
+        gsnr = self.weighted_paths.loc[
+            self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
+        # test_lightpath = copy.deepcopy(lightpath)
+        # self.propagate(test_lightpath)
+        # gsnr = (1 / test_lightpath.isnr)
+        # del test_lightpath
         bit_rate = 0
         bit_error_ratio = 1e-3
         symbol_rate = lightpath.Rs

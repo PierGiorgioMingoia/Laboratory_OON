@@ -124,6 +124,10 @@ class Line(object):
         noise_update = self.noise_generation(signal_information)
         signal_information.update_noise_power(noise_update)
 
+        # ISNR
+        if hasattr(signal_information, 'isnr'):
+            signal_information.update_isnr(self.compute_isnr(signal_information))
+
         signal_information = self._successive[signal_information.path[0]].propagate(signal_information)
         return signal_information
 
@@ -164,3 +168,11 @@ class Line(object):
     def optimized_launch_power(self, light_path):
         pch_opt = (self.ase_generation() / ((self.eta_nli(light_path) * 2) * self.n_span * NOISE_BANDWIDTH)) ** (1 / 3)
         return pch_opt
+
+    def compute_isnr(self, light_path):
+        isnr = 1 / (self.compute_gsnr(light_path))
+        return isnr
+
+    def compute_gsnr(self, light_path):
+        gsnr = light_path.signal_power / (self.noise_generation(light_path))
+        return gsnr
