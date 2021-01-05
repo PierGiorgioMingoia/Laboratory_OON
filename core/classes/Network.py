@@ -157,7 +157,7 @@ class Network(object):
         for paths in list_of_paths:
             for path in paths:
                 # print(path)
-                signal = lightpath = Lightpath(signal_power=signal_power, path=path)
+                signal = Lightpath(signal_power=signal_power, path=path)
                 string_path = ''
                 for node in path:
                     string_path += node + '->'
@@ -293,6 +293,7 @@ class Network(object):
     def calculate_bit_rate(self, lightpath, strategy):
         gsnr = self.weighted_paths.loc[
             self.weighted_paths['Path'] == '->'.join(lightpath.path)]['Signal_noise_ratio'].values[0]
+        gsnr = db_to_linear(gsnr)
         # test_lightpath = copy.deepcopy(lightpath)
         # self.propagate(test_lightpath)
         # gsnr = (1 / test_lightpath.isnr)
