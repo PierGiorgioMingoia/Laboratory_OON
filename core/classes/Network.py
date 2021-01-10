@@ -4,7 +4,7 @@ import json
 import pandas as pd
 import copy
 import random
-from scipy.special import erfinv as ierfc
+from scipy.special import erfcinv as ierfc
 from .Node import Node
 from .SignalInformation import SignalInformation, Lightpath
 from .Line import Line, NUM_OF_CHANNELS
@@ -252,7 +252,7 @@ class Network(object):
             self.weighted_paths['Path'].apply(lambda x: x.endswith(label2)))]
         return df
 
-    def stream(self, connections, label='latency'):
+    def stream(self, connections, label='latency', traffic_matrix=False):
         for connection in connections:
             if label == 'latency':
                 path, channel, index = self.find_best_latency(connection.input, connection.output)
@@ -274,7 +274,8 @@ class Network(object):
                     connection.latency = None
             else:
                 connection.latency = None
-        self.restore_switching_matrix()
+        if traffic_matrix is False:
+            self.restore_switching_matrix()
 
     def path_is_free(self, path):
         lines = lines_from_path(path)
@@ -354,7 +355,7 @@ class Network(object):
             output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))
             connection = Connection(input_node, output_node, 0.001)
             connections = [connection]
-            self.stream(connections, 'snr')
+            self.stream(connections, 'snr', traffic_matrix=True)
             if connection.latency is None:
                 print('Network is saturated')
             traffic_matrix[input_node][output_node] -= connection.bit_rate
@@ -381,7 +382,7 @@ class Network(object):
                 output_node = random.choice(list(traffic_matrix_tmp[input_node].keys()))
                 connection = Connection(input_node, output_node, 0.001)
                 connections = [connection]
-                self.stream(connections, rwa_method)
+                self.stream(connections, rwa_method, traffic_matrix=True)
                 if connection.latency is None:
                     print('Network is saturated')
                     refused_requests += 1
@@ -394,4 +395,5 @@ class Network(object):
                 traffic_connections.append(connection)
             else:
                 print('No more traffic')
+        self.restore_switching_matrix()
         return traffic_connections, refused_requests, satisfied_requests
