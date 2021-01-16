@@ -357,7 +357,7 @@ class Network(object):
             connections = [connection]
             self.stream(connections, 'snr', traffic_matrix=True)
             if connection.latency is None:
-                print('Network is saturated')
+                print("Network can't satisfy this request: [{},{}]".format(input_node, output_node))
             traffic_matrix[input_node][output_node] -= connection.bit_rate
             return connection
         else:
@@ -384,7 +384,7 @@ class Network(object):
                 connections = [connection]
                 self.stream(connections, rwa_method, traffic_matrix=True)
                 if connection.latency is None:
-                    print('Network is saturated')
+                    print("Network can't satisfy this request: [{},{}]".format(input_node, output_node))
                     refused_requests += 1
                     traffic_matrix[input_node][output_node] = 0
 
