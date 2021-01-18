@@ -29,6 +29,7 @@ class SignalInformation(object):
 
     @property
     def latency(self):
+        """Latency in seconds"""
         return self._latency
 
     @latency.setter

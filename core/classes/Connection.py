@@ -6,7 +6,6 @@ class Connection(object):
         self._latency = 0
         self._snr = 0
         self._bit_rate = 0
-        self._gsnr = 0
 
     @property
     def input(self):
@@ -37,18 +36,9 @@ class Connection(object):
         self._snr = snr
 
     @property
-    def gsnr(self):
-        return self._gsnr
-
-    @gsnr.setter
-    def gsnr(self, gsnr):
-        self._gsnr = gsnr
-
-    @property
     def bit_rate(self):
         return self._bit_rate
 
     @bit_rate.setter
     def bit_rate(self, bit_rate):
         self._bit_rate = bit_rate
-
