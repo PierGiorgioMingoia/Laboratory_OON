@@ -34,6 +34,7 @@ Implementation of the switching matrix as an attribute of the Node class.
 ### Lab7
 Evaluation of the distributions of SNR, and dynamical change of the switching matrix.
 Test on 100 of random connections.
+
 ![Histogram](img/SnrDistribution.png)
 
 ### Lab8
@@ -45,7 +46,7 @@ Physical Layer abstraction, NLI and ASE implementation.
 ### Lab10
 Optimize launch power implementation. Create connection starting form a Traffic Matrix
 and display the stats.
-g
-![Stats](./img/Traffic Matrix result.png)
 
-![Traffic Matrix](./img/Traffic matrix status.png)
+![Stats](img/Traffic_Matrix_result.png)
+
+![Traffic Matrix](img/Traffic_matrix_status.png)
