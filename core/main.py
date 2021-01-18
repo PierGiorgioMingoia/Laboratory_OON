@@ -2,7 +2,7 @@ from classes import *
 import pandas as pd
 
 if __name__ == '__main__':
-    net = Network('./data/nodes_full_flex_rate.json')
+    net = Network('./data/nodes_full_fixed_rate.json')
     weighted_paths_df = pd.read_csv('./data/lab10_dataframe.csv', index_col=0)
     net.weighted_paths = weighted_paths_df
 
@@ -12,7 +12,7 @@ if __name__ == '__main__':
     # net.draw()
     # connection = test_2_connection('A', 'F', net)
 
-    traffic_matrix = net.create_traffic_matrix(M=4)
+    traffic_matrix = net.create_traffic_matrix(M=5)
     display_traffic_matrix(traffic_matrix)
     conn, r, s = net.satisfy_traffic_matrix(traffic_matrix)
     print(len(conn), r, s)
