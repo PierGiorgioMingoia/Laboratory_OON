@@ -167,7 +167,7 @@ class Network(object):
                 all_signal_power.append(signal.signal_power)
                 all_signal_latency.append(signal.latency)
                 all_signal_noise.append(signal.noise_power)
-                all_signal_ratio.append(signal_to_noise_ratio(signal.signal_power, signal.noise_power))
+                # all_signal_ratio.append(signal_to_noise_ratio(signal.signal_power, signal.noise_power))
                 all_gsnr.append(linear_to_db(1 / signal.isnr))
 
         df = pd.DataFrame({
@@ -267,8 +267,8 @@ class Network(object):
                     self.propagate(lightpath)
                     self.update_route_space()
                     connection.latency = lightpath.latency
-                    connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
-                    connection.gsnr = linear_to_db(1 / lightpath.isnr)
+                    # connection.snr = signal_to_noise_ratio(lightpath.signal_power, lightpath.noise_power)
+                    connection.snr = linear_to_db(1 / lightpath.isnr)
                     connection.bit_rate = bit_rate
                 else:
                     connection.latency = None
@@ -367,13 +367,13 @@ class Network(object):
     def satisfy_traffic_matrix(self, traffic_matrix, rwa_method='snr'):
         traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
         traffic_connections = []
-        refused_requests = 0
+        refused_requests = []
         satisfied_requests = 0
         while bool(traffic_matrix_tmp):
             traffic_matrix_tmp = copy.deepcopy(traffic_matrix)
             for keys in list(traffic_matrix):
                 for inner_keys in list(traffic_matrix[keys]):
-                    if traffic_matrix[keys][inner_keys] <= 0:
+                    if traffic_matrix[keys][inner_keys] <= 0 or (keys, inner_keys) in refused_requests:
                         del traffic_matrix_tmp[keys][inner_keys]
                 if bool(traffic_matrix_tmp[keys]) is False:
                     del traffic_matrix_tmp[keys]
@@ -385,12 +385,12 @@ class Network(object):
                 self.stream(connections, rwa_method, traffic_matrix=True)
                 if connection.latency is None:
                     print("Network can't satisfy this request: [{},{}]".format(input_node, output_node))
-                    refused_requests += 1
-                    traffic_matrix[input_node][output_node] = 0
+                    refused_requests.append((input_node, output_node))
 
                 else:
                     traffic_matrix[input_node][output_node] -= connection.bit_rate
                     if traffic_matrix[input_node][output_node] <= 0:
+                        traffic_matrix[input_node][output_node] = 0
                         satisfied_requests += 1
                 traffic_connections.append(connection)
             else:
