@@ -45,5 +45,7 @@ Physical Layer abstraction, NLI and ASE implementation.
 ### Lab10
 Optimize launch power implementation. Create connection starting form a Traffic Matrix
 and display the stats.
-![Stats](img/Traffic Matrix result.png)
-![Traffic Matrix](img/Traffic matrix status.png)
+g
+![Stats](./img/Traffic Matrix result.png)
+
+![Traffic Matrix](./img/Traffic matrix status.png)
