@@ -6,7 +6,7 @@ if __name__ == '__main__':
     weighted_paths_df = pd.read_csv('./data/lab10_dataframe.csv', index_col=0)
     net.weighted_paths = weighted_paths_df
 
-    # connections = test_100_connections(net)
+    # connections = test_connections(net, 100)
     # snrs, bit_rates = lab8_histograms(connections)
     # print_bit_rate_and_snr_average_and_total_c(connections)
     # net.draw()

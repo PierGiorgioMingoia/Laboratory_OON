@@ -53,16 +53,20 @@ def all_pairs(nodes):
     return pairs
 
 
-def plot_histogram(array, title):
-    plt.hist(array, bins=10, color='#0504aa', alpha=0.7)
+def plot_histogram(array, title, text=None, unit=None):
+    plt.hist(array, bins=15, color='#0504aa', alpha=0.7)
     plt.title('Histogram of {}'.format(title))
+    if text is not None:
+        plt.suptitle(text, fontsize=10)
+    if unit is not None:
+        plt.xlabel(unit)
     plt.show()
 
 
-def test_100_connections(network):
+def test_connections(network, n=100):
     c_array = []
     labels = ['A', 'B', 'C', 'D', 'E', 'F']
-    for i in range(100):
+    for i in range(n):
         label1 = random.choice(labels)
         label2 = random.choice(labels)
         while label1 == label2:
@@ -74,6 +78,7 @@ def test_100_connections(network):
 
 
 def histogram_of_connections(c_array):
+    total_connections, c_array, refused_connections = count_connections(c_array)
     con_latency = []
     con_snr = []
     for connection in c_array:
@@ -83,21 +88,33 @@ def histogram_of_connections(c_array):
             con_snr.append(connection.snr)
             con_latency.append(connection.latency)
     # change from s to ms
-    con_latency = [x * 1000 if x is not None else 0 for x in con_latency]
-    plot_histogram(con_latency, 'Latency')
-    plot_histogram(con_snr, 'Signal to noise ratio')
+    con_snr = [x for x in con_snr]
+    con_latency = [x * 1000 for x in con_latency]
+    plot_histogram(con_latency, 'Latency distribution',
+                   text='Total connections: {} refused: {}'.format(total_connections, refused_connections), unit='ms')
+    plot_histogram(con_snr, 'SNR distribution', unit='dB')
     return con_latency, con_snr
 
 
+def count_connections(connections):
+    total_connections = len(connections)
+    accepted_connections = [c for c in connections if c.latency is not None]
+    refused_connections = total_connections - len(accepted_connections)
+
+    return total_connections, accepted_connections, refused_connections
+
+
 def lab8_histograms(c_array):
+    total_connections, c_array, refused_connections = count_connections(c_array)
     con_snr = []
     con_bit_rate = []
     for connection in c_array:
         con_snr.append(connection.snr)
         con_bit_rate.append(connection.bit_rate)
-    con_bit_rate = [x / 1e9 for x in con_bit_rate]
-    plot_histogram(con_snr, 'SNR distribution')
-    plot_histogram(con_bit_rate, 'Bit rate distribution')
+    con_bit_rate = [bit_rate_to_Giga_per_seconds(x) for x in con_bit_rate]
+    plot_histogram(con_snr, 'SNR distribution',
+                   text='Total connections: {} refused: {}'.format(total_connections, refused_connections), unit='dB')
+    plot_histogram(con_bit_rate, 'Bit rate distribution', unit='Gbit/s')
     return con_snr, con_bit_rate
 
 
@@ -106,15 +123,21 @@ def bit_rate_to_Giga_per_seconds(bit_rate):
 
 
 def print_bit_rate_and_snr_average_and_total_c(connections):
+    total_connections, connections, refused_connections = count_connections(connections)
     snrs = []
     bit_rates = []
     for connection in connections:
         snrs.append(connection.snr)
         bit_rates.append(connection.bit_rate)
-    bit_rates = [bit_rate_to_Giga_per_seconds(bit_rate) for bit_rate in bit_rates]
-    print('Average SNR: {} dB, Average bit rate: {} Gbit/s, Total capacity: {} Gbit/s'.format(np.average(snrs),
-                                                                                              np.average(bit_rates),
-                                                                                              np.sum(bit_rates)))
+    snrs = [x for x in snrs if x != 0]
+    bit_rates = [bit_rate_to_Giga_per_seconds(bit_rate) for bit_rate in bit_rates if bit_rate != 0]
+    print(
+        'Total connections: {}, Refused connections: {}, Average SNR: {} dB, Average bit rate: {} Gbit/s, Total capacity: {} Gbit/s'.format(
+            total_connections,
+            refused_connections,
+            np.average(snrs),
+            np.average(bit_rates),
+            np.sum(bit_rates)))
     return np.average(snrs), np.average(bit_rates), np.sum(bit_rates)
 
 
@@ -151,6 +174,7 @@ def create_traffic_matrix(network):
 
 
 def traffic_matrix_results_plot(conn, r, s):
+    total_connections, conn, refused_connections = count_connections(conn)
     con_snrs = []
     con_latencies = []
     con_bit_rates = []
@@ -158,24 +182,30 @@ def traffic_matrix_results_plot(conn, r, s):
         con_snrs.append(connection.snr)
         con_bit_rates.append(connection.bit_rate)
         con_latencies.append(connection.latency)
+    con_snrs = [x for x in con_snrs]
     con_bit_rates = [bit_rate_to_Giga_per_seconds(bit_rate) for bit_rate in con_bit_rates]
-    con_latencies = [x * 1000 if x is not None else 0 for x in con_latencies]
+    con_latencies = [x * 1000 for x in con_latencies]
     fig, axs = plt.subplots(2, 2, figsize=(20, 10))
     fig.suptitle(
-        'Traffic Matrix result, Average SNR: {:.2f} dB, Average bit rate: {:.2f} Gbit/s, Total capacity: {:.2f} Gbit/s'.format(
+        'Traffic Matrix result, Total Connections: {}, Average SNR: {:.2f} dB, Average bit rate: {:.2f} Gbit/s, '
+        'Total capacity: {:.2f} Gbit/s'.format(
+            total_connections,
             np.average(con_snrs),
             np.average(con_bit_rates),
             np.sum(con_bit_rates)))
-    axs[0, 0].hist(con_snrs, bins=10, color='#0504aa', alpha=0.7)
+    axs[0, 0].hist(con_snrs, bins=20, color='#0504aa', alpha=0.7)
     axs[0, 0].set_title('Histogram of SNR distribution')
     axs[0, 0].set(xlabel='dB')
     axs[1, 0].hist(con_bit_rates, bins=10, color='#f59e42', alpha=0.7)
     axs[1, 0].set_title('Histogram of Bit rate distribution')
     axs[1, 0].set(xlabel='Gbit/s')
-    axs[0, 1].hist(con_latencies, bins=10, color='#e342f5', alpha=0.7)
+    axs[0, 1].hist(con_latencies, bins=20, color='#e342f5', alpha=0.7)
     axs[0, 1].set_title('Histogram of Latency distribution')
     axs[0, 1].set(xlabel='ms')
-    axs[1, 1].bar(['Satisfied', 'Refused'], [s, len(r)], color=['#14e00d', '#e00d0d'])
+    bar1 = axs[1, 1].bar(['Satisfied', 'Refused'], [s, len(r)], color=['#14e00d', '#e00d0d'])
+    for rect in bar1:
+        height = rect.get_height()
+        axs[1, 1].text(rect.get_x() + rect.get_width() / 2.0, height, '%d' % int(height), ha='center', va='bottom')
     axs[1, 1].set_title('Satisfied vs Refused requests')
     plt.show()
 
