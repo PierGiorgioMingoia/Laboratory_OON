@@ -303,8 +303,6 @@ class Network(object):
         bit_error_ratio = 1e-3
         symbol_rate = lightpath.Rs
 
-        # TODO now why my bit_rate in flex rate is always = 400
-
         if strategy == 'flex_rate':
             if gsnr < 2 * (ierfc(2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 0
@@ -315,7 +313,7 @@ class Network(object):
             elif 14 / 3 * (ierfc(3 / 2 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH <= gsnr < 10 * (
                     (ierfc(8 / 3 * bit_error_ratio) ** 2)) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 200e9
-            #
+
             elif gsnr >= 10 * (ierfc(8 / 3 * bit_error_ratio) ** 2) * symbol_rate / NOISE_BANDWIDTH:
                 bit_rate = 400e9
 

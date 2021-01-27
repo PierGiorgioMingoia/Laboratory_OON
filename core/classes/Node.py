@@ -82,6 +82,17 @@ class Node(object):
                 switching_matrix[key][k] = np.array(switching_matrix[key][k], dtype=np.uint8)
         return switching_matrix
 
+    def old_create_switching_matrix(self):
+        dic = dict()
+        for node in self.connected_nodes:
+            dic[node] = dict()
+            for n in self.connected_nodes:
+                if n == node:
+                    dic[node][n] = np.zeros(NUM_OF_CHANNELS, dtype=int)
+                else:
+                    dic[node][n] = np.ones(NUM_OF_CHANNELS, dtype=int)
+        return dic
+
     def dynamic_mod_switching_matrix(self, channel, input_node, output_node):
         self.switching_matrix[input_node][output_node][channel] = 0
         if channel == NUM_OF_CHANNELS - 1:
