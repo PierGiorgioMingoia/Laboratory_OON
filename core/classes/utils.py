@@ -185,7 +185,7 @@ def traffic_matrix_results_plot(conn, r, s):
     con_snrs = [x for x in con_snrs]
     con_bit_rates = [bit_rate_to_Giga_per_seconds(bit_rate) for bit_rate in con_bit_rates]
     con_latencies = [x * 1000 for x in con_latencies]
-    fig, axs = plt.subplots(2, 2, figsize=(20, 10))
+    fig, axs = plt.subplots(2, 2, figsize=(20, 10), constrained_layout=True)
     fig.suptitle(
         'Traffic Matrix result, Total Connections: {}, Average SNR: {:.2f} dB, Average bit rate: {:.2f} Gbit/s, '
         'Total capacity: {:.2f} Gbit/s'.format(
